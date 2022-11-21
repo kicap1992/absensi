@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:absensi_karyawan/src/services/notification_services.dart';
+import 'package:background_location/background_location.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
 
@@ -27,17 +29,46 @@ final dev = Logger();
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await GetStorage.init();
+  // await _startBackgroundLocation();
   await dotenv.load(fileName: ".env");
   StorageService storage = StorageService();
   await storage.init();
-  // await initializeService();
+
   await _configureLocalTimeZone();
   await NotificationServices.init();
+  // await initializeService();
+
   runApp(const MyApp());
 }
 
 Future<void> initializeService() async {
   final service = FlutterBackgroundService();
+
+  /// OPTIONAL, using custom notification channel id
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'my_foreground', // id
+    'MY FOREGROUND SERVICE', // title
+    description:
+        'This channel is used for important notifications.', // description
+    importance: Importance.low, // importance must be at low or higher level
+  );
+
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  if (Platform.isIOS) {
+    await flutterLocalNotificationsPlugin.initialize(
+      const InitializationSettings(
+        iOS: IOSInitializationSettings(),
+      ),
+    );
+  }
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
   await service.configure(
     androidConfiguration: AndroidConfiguration(
       // this will be executed when app is in foreground or background in separated isolate
@@ -46,6 +77,11 @@ Future<void> initializeService() async {
       // auto start service
       autoStart: true,
       isForegroundMode: true,
+
+      // notificationChannelId: 'my_foreground',
+      // initialNotificationTitle: 'AWESOME SERVICE',
+      // initialNotificationContent: 'Initializing',
+      // foregroundServiceNotificationId: 888,
     ),
     iosConfiguration: IosConfiguration(
       // auto start service
@@ -58,24 +94,41 @@ Future<void> initializeService() async {
       onBackground: onIosBackground,
     ),
   );
+
   service.startService();
 }
 
 // to ensure this is executed
 // run app from xcode, then from xcode menu, select Simulate Background Fetch
-bool onIosBackground(ServiceInstance service) {
+
+@pragma('vm:entry-point')
+Future<bool> onIosBackground(ServiceInstance service) async {
   WidgetsFlutterBinding.ensureInitialized();
-  dev.i('FLUTTER BACKGROUND FETCH');
+  DartPluginRegistrant.ensureInitialized();
+
+  // SharedPreferences preferences = await SharedPreferences.getInstance();
+  // await preferences.reload();
+  // final log = preferences.getStringList('log') ?? <String>[];
+  // log.add(DateTime.now().toIso8601String());
+  // await preferences.setStringList('log', log);
 
   return true;
 }
 
+@pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
 
   // For flutter prior to version 3.0.0
   // We have to register the plugin manually
+
+  // SharedPreferences preferences = await SharedPreferences.getInstance();
+  // await preferences.setString("hello", "world");
+
+  /// OPTIONAL when use custom notification
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -92,15 +145,77 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-
   Timer.periodic(const Duration(seconds: 5), (timer) async {
-    // NotificationServices.showNotification(
-    //   id: 1,
-    //   title: 'Percobaan 2',
-    //   body: "ini message",
-    //   payload: 'Percobaan 2',
-    // );
+    // const platform = MethodChannel('example.com/channel');
+    // int random;
+    // try {
+    //   random = await platform.invokeMethod('getRandomNumber');
+    // } on PlatformException catch (e) {
+    //   random = 0;
+    // }
+    // BackgroundLocation().getCurrentLocation().then((location) {
+    //   dev.i('Location: ${location.latitude}, ${location.longitude}');
+    //   // NotificationServices.showNotification(
+    //   //   id: 1,
+    //   //   title: 'Percobaan 2',
+    //   //   body: 'Location: ${location.latitude}, ${location.longitude}',
+    //   //   payload: 'Percobaan 2',
+    //   // );
+    // });
+    // if (service is AndroidServiceInstance) {
+    //   // if (await service.isForegroundService()) {
+    //   /// OPTIONAL for use custom notification
+    //   /// the notification id must be equals with AndroidConfiguration when you call configure() method.
+    //   flutterLocalNotificationsPlugin.show(
+    //     888,
+    //     'COOL SERVICE',
+    //     'Awesome ${DateTime.now()}',
+    //     const NotificationDetails(
+    //       android: AndroidNotificationDetails(
+    //         'my_foreground',
+    //         'MY FOREGROUND SERVICE',
+    //         icon: 'ic_bg_service_small',
+    //         ongoing: true,
+    //       ),
+    //     ),
+    //   );
+
+    //   // if you don't using custom notification, uncomment this
+    //   // service.setForegroundNotificationInfo(
+    //   //   title: "My App Service",
+    //   //   content: "Updated at ${DateTime.now()}",
+    //   // );
+    //   // }
+    // }
+
+    /// you can see this log in logcat
+    dev.i('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
+
+    // test using external plugin
+    // final deviceInfo = DeviceInfoPlugin();
+    String? device;
+    if (Platform.isAndroid) {
+      // final androidInfo = await deviceInfo.androidInfo;
+      // device = androidInfo.model;
+    }
+
+    if (Platform.isIOS) {
+      // final iosInfo = await deviceInfo.iosInfo;
+      // device = iosInfo.model;
+    }
+
+    service.invoke(
+      'update',
+      {
+        "current_date": DateTime.now().toIso8601String(),
+        "device": device,
+      },
+    );
   });
+}
+
+Future<void> _startBackgroundLocation() async {
+  await BackgroundLocation.startLocationService(distanceFilter: 20);
 }
 
 Future<void> _configureLocalTimeZone() async {
@@ -108,8 +223,15 @@ Future<void> _configureLocalTimeZone() async {
     return;
   }
   tz.initializeTimeZones();
-  final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
-  tz.setLocalLocation(tz.getLocation(timeZoneName));
+  try {
+    final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+  } catch (e) {
+    tz.setLocalLocation(tz.getLocation('Asia/Kuala_Lumpur'));
+  }
+
+  // final String timeZoneName = await FlutterNativeTimezone.getLocalTimezone();
+  // tz.setLocalLocation(tz.getLocation(timeZoneName));
 }
 
 class MyApp extends StatelessWidget {

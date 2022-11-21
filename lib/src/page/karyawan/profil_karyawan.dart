@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 
 import '../../config/theme.dart';
 import '../../services/storage_service.dart';
+import '../../widget/dumb_widget/my_textformfield.dart';
 import '../../widget/smart_widget/bounce_scroller.dart';
 
 class ProfilKaryawanPage extends StatefulWidget {
@@ -20,6 +21,18 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
 
   UserDataModel? userDataModel;
   static final url = dotenv.env['URL'];
+
+  TextEditingController _oldPasswordController = TextEditingController();
+  TextEditingController _newPasswordController = TextEditingController();
+  TextEditingController _confirmPasswordController = TextEditingController();
+
+  FocusNode _oldPasswordFocusNode = FocusNode();
+  FocusNode _newPasswordFocusNode = FocusNode();
+  FocusNode _confirmPasswordFocusNode = FocusNode();
+
+  bool _isOldPasswordVisible = false;
+  bool _isNewPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -37,73 +50,194 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
     // dev.i("$url${userDataModel.image}");
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return BounceScrollerWidget(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(
-              height: 20,
+  Future<void> _showPasswordEdit() async {
+    // create dialog box
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            "Ganti Password",
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
             ),
-            Container(
-              padding: const EdgeInsets.all(5),
-              alignment: Alignment.center,
-              height: 100,
-              width: 100,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                // borderRadius: BorderRadius.circular(100),
-                image: DecorationImage(
-                  image: AssetImage('assets/loading.gif'),
-                  fit: BoxFit.fitHeight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: ThemeInfo.myGrey2,
-                    blurRadius: 10,
-                    spreadRadius: 5,
+          ),
+          content: SizedBox(
+            // height: MediaQuery.of(context).size.height * 0.5,
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  MyTextFormField(
+                    controller: _oldPasswordController,
+                    focusNode: _oldPasswordFocusNode,
+                    labelText: "Password Lama",
+                    hintText: "Password Lama",
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isOldPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isOldPasswordVisible = !_isOldPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  MyTextFormField(
+                    controller: _newPasswordController,
+                    focusNode: _newPasswordFocusNode,
+                    labelText: "Password Baru",
+                    hintText: "Password Baru",
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isNewPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isNewPasswordVisible = !_isNewPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  MyTextFormField(
+                    controller: _confirmPasswordController,
+                    focusNode: _confirmPasswordFocusNode,
+                    labelText: "Konfirmasi Password",
+                    hintText: "Konfirmasi Password",
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
-              // child: Image.network(
-              //   "$url${userDataModel?.image}",
-              //   errorBuilder: (context, error, stackTrace) {
-              //     return Image.asset(
-              //       'assets/profile_blank.png',
-              //       fit: BoxFit.cover,
-              //     );
-              //   },
-              // ),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Batalkan'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Ganti Password'),
+              onPressed: () {
+                // if (_formKey.currentState!.validate()) {
+                // unfocus all
+                FocusScope.of(context).unfocus();
 
-              child: Center(
-                child: CircleAvatar(
-                  radius: 100,
-                  backgroundImage:
-                      NetworkImage("$url${userDataModel?.image}", scale: 100),
-                  onBackgroundImageError: (exception, stackTrace) {
-                    return;
-                  },
-                ),
-              ),
+                // if
+              },
             ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Text(
-                userDataModel == null ? "loading.." : userDataModel!.nama!,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: ThemeInfo.negroTexto,
-                ),
-              ),
-            ),
-            _DetailParent(userDataModel: userDataModel),
           ],
-        ),
-      ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: BounceScrollerWidget(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(
+                height: 20,
+              ),
+              Container(
+                padding: const EdgeInsets.all(5),
+                alignment: Alignment.center,
+                height: 100,
+                width: 100,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  // borderRadius: BorderRadius.circular(100),
+                  image: DecorationImage(
+                    image: AssetImage('assets/loading.gif'),
+                    fit: BoxFit.fitHeight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ThemeInfo.myGrey2,
+                      blurRadius: 10,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                // child: Image.network(
+                //   "$url${userDataModel?.image}",
+                //   errorBuilder: (context, error, stackTrace) {
+                //     return Image.asset(
+                //       'assets/profile_blank.png',
+                //       fit: BoxFit.cover,
+                //     );
+                //   },
+                // ),
+
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 100,
+                    backgroundImage:
+                        NetworkImage("$url${userDataModel?.image}", scale: 100),
+                    onBackgroundImageError: (exception, stackTrace) {
+                      return;
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Text(
+                  userDataModel == null ? "loading.." : userDataModel!.nama!,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: ThemeInfo.negroTexto,
+                  ),
+                ),
+              ),
+              _DetailParent(userDataModel: userDataModel),
+            ],
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showPasswordEdit();
+        },
+        child: const Icon(Icons.edit),
+        backgroundColor: ThemeInfo.primary,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );
   }
 }

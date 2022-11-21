@@ -65,20 +65,27 @@ class _AbsensiKaryawanState extends State<AbsensiKaryawan> {
     final DateFormat formatter = DateFormat('yyyy-MM-dd');
     formatted = formatter.format(now);
     String today = DateFormat('EEEE').format(now);
-    // dev.i(today);
+    dev.i(today);
     if (today == "Sunday" || today == "Saturday") {
-      setState(() {
-        String day = (today == "Sunday") ? "Minggu" : "Sabtu";
-        _statusnya = {'stat': "Libur", 'ket': "Libur Hari $day"};
-      });
+      if (mounted) {
+        setState(() {
+          String day = (today == "Sunday") ? "Minggu" : "Sabtu";
+          _statusnya = {'stat': "Libur", 'ket': "Libur Hari $day"};
+        });
+      }
     } else {
       await ApiServices.getTodayLiburAndPerjalanDinas(formatted);
       // await Future.delayed(Duration(seconds: 1));
       dynamic statusnya = await _storage.read('ada_perjalanan_dinas_libur');
       // dev.i(statusnya);
-      setState(() {
-        _statusnya = statusnya;
-      });
+      if (mounted) {
+        setState(() {
+          _statusnya = statusnya;
+        });
+      }
+      // setState(() {
+      //   _statusnya = statusnya;
+      // });
     }
 
     List jadwalDinasList = await _storage.read('jadwalKerja');
@@ -93,7 +100,7 @@ class _AbsensiKaryawanState extends State<AbsensiKaryawan> {
       }
     }
 
-    dev.i(_jadwalDinasModel.hari);
+    // dev.i(_jadwalDinasModel.hari);
     // dev.i(_jadwalDinasModel.jamMasuk);
     // dev.i(_jadwalDinasModel.jamIstirehat);
     // dev.i(_jadwalDinasModel.jamMasukKembali);

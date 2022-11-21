@@ -1,3 +1,4 @@
+import 'package:background_location/background_location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -21,6 +22,7 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
   @override
   void initState() {
     super.initState();
+    getCurrentLocation();
     initPlatformState();
     // future 3 sec
     Future.delayed(const Duration(seconds: 4), () async {
@@ -34,6 +36,12 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
       }
       // Navigator.pushReplacementNamed(context, 'login');
     });
+  }
+
+  void getCurrentLocation() {
+    // BackgroundLocation.getLocationUpdates((location) {
+    //   dev.i('location: ${location.latitude}, ${location.longitude}');
+    // });
   }
 
   void goToLogin() {
