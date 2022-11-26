@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/base_response.dart';
 import '../models/user_data_model.dart';
@@ -10,6 +13,9 @@ class ApiServices {
   static final dev = Logger();
   static final storage = StorageService();
   static final url = dotenv.env['SERVER_URL'];
+
+  static final Future<SharedPreferences> _prefs =
+      SharedPreferences.getInstance();
 
   static final options = BaseOptions(
     baseUrl: url!,
@@ -177,6 +183,8 @@ class ApiServices {
       // return null;
       if (response.statusCode == 200) {
         storage.write('jadwalKerja', responseReturn['data']);
+        final SharedPreferences prefs = await _prefs;
+        prefs.setString('jadwalKerja', jsonEncode(responseReturn['data']));
       }
 
       return null;

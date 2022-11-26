@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:absensi_karyawan/src/models/base_response.dart';
 import 'package:absensi_karyawan/src/services/api_service.dart';
 import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/storage_service.dart';
 import '../widget/dumb_widget/my_button.dart';
@@ -23,6 +26,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _storage = StorageService();
   final dev = Logger();
+  static final Future<SharedPreferences> _prefs =
+      SharedPreferences.getInstance();
+
+  SharedPreferences? _sharedPreferences;
 
   bool _showPassword = false;
   late TextEditingController _nikController;
@@ -45,6 +52,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void baca() async {
     String? ini = await _storage.read('device_id');
+    _sharedPreferences = await _prefs;
     dev.i(ini);
   }
 
@@ -114,6 +122,7 @@ class _LoginPageState extends State<LoginPage> {
     }
     // dev.i(response.firstTime);
     await _storage.write('userData', response.data);
+    _sharedPreferences!.setString('userData', jsonEncode(response.data));
 
     info(response.message, true);
     bool firstTime = false;

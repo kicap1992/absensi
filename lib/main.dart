@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:absensi_karyawan/src/models/jadwal_dinas_model.dart';
 import 'package:absensi_karyawan/src/services/notification_services.dart';
 // import 'package:background_location/background_location.dart';
 import 'package:flutter/foundation.dart';
@@ -12,12 +14,15 @@ import 'package:flutter_background_service_android/flutter_background_service_an
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'src/config/routes.dart';
 import 'src/config/theme.dart';
 import 'src/provider/login_provider.dart';
+import 'src/services/other_services.dart';
 import 'src/services/storage_service.dart';
 
 import 'package:flutter_native_timezone/flutter_native_timezone.dart';
@@ -36,7 +41,7 @@ Future main() async {
 
   await _configureLocalTimeZone();
   await NotificationServices.init();
-  // await initializeService();
+  await initializeService();
 
   runApp(const MyApp());
 }
@@ -115,8 +120,35 @@ Future<bool> onIosBackground(ServiceInstance service) async {
   return true;
 }
 
+final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+
 @pragma('vm:entry-point')
 void onStart(ServiceInstance service) async {
+  // final storage = StorageService();
+  // var jadwalKerja = await storage.read('jadwalKerja');
+
+  String? jadwalKerja;
+  List? jadwalKerjaList;
+  String? userData;
+  Map? userDataMap;
+
+  final SharedPreferences prefs = await _prefs;
+
+  jadwalKerja = prefs.getString('jadwalKerja');
+  userData = prefs.getString('userData');
+
+  // dev.i(userData);
+
+  if (jadwalKerja != null) {
+    jadwalKerjaList = jsonDecode(jadwalKerja);
+    // dev.i(jadwalKerjaList);
+  }
+
+  if (userData != null) {
+    userDataMap = jsonDecode(userData);
+    // dev.i(userDataMap);
+  }
+
   // Only available for flutter 3.0.0 and later
   DartPluginRegistrant.ensureInitialized();
 
@@ -127,8 +159,6 @@ void onStart(ServiceInstance service) async {
   // await preferences.setString("hello", "world");
 
   /// OPTIONAL when use custom notification
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
 
   if (service is AndroidServiceInstance) {
     service.on('setAsForeground').listen((event) {
@@ -145,7 +175,64 @@ void onStart(ServiceInstance service) async {
   });
 
   // bring to foreground
-  Timer.periodic(const Duration(seconds: 5), (timer) async {
+  Timer.periodic(const Duration(seconds: 60), (timer) async {
+    if (userDataMap == null) return;
+    if (jadwalKerjaList == null) return;
+    final DateTime now = DateTime.now();
+    // get the now time
+    final DateFormat formatter = DateFormat('HH:mm:ss');
+    var formatted = formatter.format(now);
+    // get the overall seconds from formatted time
+    int seconds = int.parse(formatted.split(':')[0]) * 3600 +
+        int.parse(formatted.split(':')[1]) * 60 +
+        int.parse(formatted.split(':')[2]);
+
+    // change formatted to time
+    dev.i(seconds);
+    // get the time now
+
+    String today = DateFormat('EEEE').format(now);
+    // dev.i(today);
+    // String dayName = OtherServices.dayNameChanger(jadwalDinasModel.hari!);
+    if (today != "Sunday" || today == "Saturday") return;
+    for (var data in jadwalKerjaList) {
+      JadwalDinasModel jadwalDinasModel = JadwalDinasModel.fromJson(data);
+      String dayName = OtherServices.dayNameChanger(jadwalDinasModel.hari!);
+      // dev.i(dayName);
+
+      if (dayName == today) {
+        // create a dateFormat from jadwalDinasModel.jamMasuk
+        var jamMasuk = formatter.parse(jadwalDinasModel.jamMasuk!);
+        var jamPulang = formatter.parse(jadwalDinasModel.jamPulang!);
+        // fet only the time
+        // minus 30 minutes from jamMasukOnlyTime
+        // and plus 30 minutes from jamPulangOnlyTime
+        var jamMasukMinus30 = jamMasuk.subtract(const Duration(minutes: 30));
+        var jamPulangPlus30 = jamPulang.add(const Duration(minutes: 30));
+
+        var jamMasukOnlyTime = formatter.format(jamMasukMinus30);
+        var jamPulangOnlyTime = formatter.format(jamPulangPlus30);
+
+        // get the overall seconds from jamMasukOnlyTime and jamPulangOnlyTime
+        int secondsJamMasuk = int.parse(jamMasukOnlyTime.split(':')[0]) * 3600 +
+            int.parse(jamMasukOnlyTime.split(':')[1]) * 60 +
+            int.parse(jamMasukOnlyTime.split(':')[2]);
+
+        int secondsJamPulang =
+            int.parse(jamPulangOnlyTime.split(':')[0]) * 3600 +
+                int.parse(jamPulangOnlyTime.split(':')[1]) * 60 +
+                int.parse(jamPulangOnlyTime.split(':')[2]);
+
+        // if seconds is between jamMasukOnlyTimeSeconds and jamPulangOnlyTimeSeconds
+        // then show notification
+        if (seconds >= secondsJamMasuk && seconds <= secondsJamPulang) {
+          dev.i("jalankan");
+        } else {
+          dev.i("tidak jalankan");
+        }
+      }
+    }
+
     // const platform = MethodChannel('example.com/channel');
     // int random;
     // try {
@@ -189,33 +276,29 @@ void onStart(ServiceInstance service) async {
     // }
 
     /// you can see this log in logcat
-    dev.i('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
+    // dev.i('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
 
     // test using external plugin
     // final deviceInfo = DeviceInfoPlugin();
-    String? device;
-    if (Platform.isAndroid) {
-      // final androidInfo = await deviceInfo.androidInfo;
-      // device = androidInfo.model;
-    }
+    // String? device;
+    // if (Platform.isAndroid) {
+    //   // final androidInfo = await deviceInfo.androidInfo;
+    //   // device = androidInfo.model;
+    // }
 
-    if (Platform.isIOS) {
-      // final iosInfo = await deviceInfo.iosInfo;
-      // device = iosInfo.model;
-    }
+    // if (Platform.isIOS) {
+    //   // final iosInfo = await deviceInfo.iosInfo;
+    //   // device = iosInfo.model;
+    // }
 
     service.invoke(
       'update',
       {
-        "current_date": DateTime.now().toIso8601String(),
-        "device": device,
+        // "current_date": DateTime.now().toIso8601String(),
+        // "device": device,
       },
     );
   });
-}
-
-Future<void> _startBackgroundLocation() async {
-  // await BackgroundLocation.startLocationService(distanceFilter: 20);
 }
 
 Future<void> _configureLocalTimeZone() async {

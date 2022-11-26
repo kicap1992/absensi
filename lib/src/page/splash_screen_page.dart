@@ -1,8 +1,11 @@
 // import 'package:background_location/background_location.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:platform_device_id/platform_device_id.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/theme.dart';
 import '../models/base_response.dart';
@@ -20,6 +23,10 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
   final dev = Logger();
   // String? _deviceId;
   final _storage = StorageService();
+  static final Future<SharedPreferences> _prefs =
+      SharedPreferences.getInstance();
+
+  SharedPreferences? _sharedPreferences;
 
   @override
   void initState() {
@@ -29,8 +36,9 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
     // future 3 sec
     Future.delayed(const Duration(seconds: 4), () async {
       // await _storage.remove('userData');
+      _sharedPreferences = await _prefs;
       var checkUser = await _storage.read('userData');
-      dev.i(checkUser);
+      // dev.i(checkUser);
       if (checkUser == null) {
         goToLogin();
       } else {
@@ -43,6 +51,8 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
         if (response!.status == true) {
           // dev.i(response.data['data_user']);
           await _storage.write('userData', response.data['data_user']);
+          _sharedPreferences!
+              .setString('userData', jsonEncode(response.data['data_user']));
           // dev.i(response.data['data_jadwal']);
 
           goToHomepage();

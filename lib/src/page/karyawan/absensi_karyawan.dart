@@ -39,8 +39,6 @@ class _AbsensiKaryawanState extends State<AbsensiKaryawan> {
 
   AbsensiKaryawanModel? absensiKaryawanModel;
 
-  late JadwalDinasModel _jadwalDinasModel;
-
   bool buttonLoad = false;
 
   String stat = 'jam_masuk';
@@ -65,7 +63,7 @@ class _AbsensiKaryawanState extends State<AbsensiKaryawan> {
     final DateFormat formatter = DateFormat('yyyy-MM-dd');
     formatted = formatter.format(now);
     String today = DateFormat('EEEE').format(now);
-    dev.i(today);
+    // dev.i(today);
     if (today == "Sunday" || today == "Saturday") {
       if (mounted) {
         setState(() {
@@ -89,14 +87,13 @@ class _AbsensiKaryawanState extends State<AbsensiKaryawan> {
     }
 
     List jadwalDinasList = await _storage.read('jadwalKerja');
+    // dev.i(jadwalDinasList);
 
     for (var data in jadwalDinasList) {
       JadwalDinasModel jadwalDinasModel = JadwalDinasModel.fromJson(data);
       String dayName = OtherServices.dayNameChanger(jadwalDinasModel.hari!);
       if (dayName == today) {
-        setState(() {
-          _jadwalDinasModel = jadwalDinasModel;
-        });
+        setState(() {});
       }
     }
 

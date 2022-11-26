@@ -25,17 +25,18 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
   UserDataModel? userDataModel;
   static final url = dotenv.env['URL'];
 
-  TextEditingController _oldPasswordController = TextEditingController();
-  TextEditingController _newPasswordController = TextEditingController();
-  TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _oldPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
-  FocusNode _oldPasswordFocusNode = FocusNode();
-  FocusNode _newPasswordFocusNode = FocusNode();
-  FocusNode _confirmPasswordFocusNode = FocusNode();
+  final FocusNode _oldPasswordFocusNode = FocusNode();
+  final FocusNode _newPasswordFocusNode = FocusNode();
+  final FocusNode _confirmPasswordFocusNode = FocusNode();
 
-  bool _isOldPasswordVisible = false;
-  bool _isNewPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
+  final bool _isOldPasswordVisible = false;
+  final bool _isNewPasswordVisible = false;
+  final bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -88,7 +89,7 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
                     labelText: "Password Lama",
                     hintText: "Password Lama",
                     suffixIcon: IconButton(
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.visibility_off,
                       ),
                       onPressed: () {
@@ -106,7 +107,7 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
                     labelText: "Password Baru",
                     hintText: "Password Baru",
                     suffixIcon: IconButton(
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.visibility_off,
                       ),
                       onPressed: () {
@@ -124,7 +125,7 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
                     labelText: "Konfirmasi Password",
                     hintText: "Konfirmasi Password",
                     suffixIcon: IconButton(
-                      icon: Icon(
+                      icon: const Icon(
                         Icons.visibility_off,
                       ),
                       onPressed: () {
@@ -295,8 +296,8 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
         onPressed: () {
           _showPasswordEdit();
         },
-        child: const Icon(Icons.edit),
         backgroundColor: ThemeInfo.primary,
+        child: const Icon(Icons.edit),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
     );

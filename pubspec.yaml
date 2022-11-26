@@ -66,6 +66,7 @@ dependencies:
   # background_location:
   # background_locator:
   # location: ^5.0.0-dev.7
+  shared_preferences:
 
 dev_dependencies:
   flutter_test:

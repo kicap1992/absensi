@@ -11,7 +11,7 @@ final storage = StorageService();
 // Stream<void> getLoc() async* {
 Future<void> getLoc() async {
   // bool checkIfRunGps = await storage.read('runGPS');
-  dev.i("heheh");
+  // dev.i("heheh");
   bool serviceEnabled;
   PermissionStatus permissionGranted;
   // ignore: unused_local_variable
@@ -41,7 +41,7 @@ Future<void> getLoc() async {
 
   while (true) {
     bool checkIfRunGps = await storage.read('runGPS');
-    dev.i("ini check if gps $checkIfRunGps");
+    // dev.i("ini check if gps $checkIfRunGps");
 
     if (checkIfRunGps) {
       locationData = await location.getLocation();
