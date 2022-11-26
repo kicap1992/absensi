@@ -63,7 +63,7 @@ dependencies:
   google_maps_flutter:
 
   # geolocator:
-  background_location:
+  # background_location:
   # background_locator:
   # location: ^5.0.0-dev.7
 

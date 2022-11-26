@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:absensi_karyawan/src/services/notification_services.dart';
-import 'package:background_location/background_location.dart';
+// import 'package:background_location/background_location.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -215,7 +215,7 @@ void onStart(ServiceInstance service) async {
 }
 
 Future<void> _startBackgroundLocation() async {
-  await BackgroundLocation.startLocationService(distanceFilter: 20);
+  // await BackgroundLocation.startLocationService(distanceFilter: 20);
 }
 
 Future<void> _configureLocalTimeZone() async {

@@ -1,9 +1,12 @@
+import 'package:absensi_karyawan/src/models/base_response.dart';
 import 'package:absensi_karyawan/src/models/user_data_model.dart';
+import 'package:animated_snack_bar/animated_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 
 import '../../config/theme.dart';
+import '../../services/api_service.dart';
 import '../../services/storage_service.dart';
 import '../../widget/dumb_widget/my_textformfield.dart';
 import '../../widget/smart_widget/bounce_scroller.dart';
@@ -47,11 +50,16 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
       userDataModel = UserDataModel.fromJson(userData);
     });
 
-    // dev.i("$url${userDataModel.image}");
+    dev.i("$url${userDataModel?.image}");
   }
 
   Future<void> _showPasswordEdit() async {
     // create dialog box
+    // empty text field
+    _oldPasswordController.clear();
+    _newPasswordController.clear();
+    _confirmPasswordController.clear();
+
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -76,18 +84,15 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
                   MyTextFormField(
                     controller: _oldPasswordController,
                     focusNode: _oldPasswordFocusNode,
+                    obscureText: !_isOldPasswordVisible,
                     labelText: "Password Lama",
                     hintText: "Password Lama",
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isOldPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() {
-                          _isOldPasswordVisible = !_isOldPasswordVisible;
-                        });
+                        null;
                       },
                     ),
                   ),
@@ -97,18 +102,15 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
                   MyTextFormField(
                     controller: _newPasswordController,
                     focusNode: _newPasswordFocusNode,
+                    obscureText: !_isNewPasswordVisible,
                     labelText: "Password Baru",
                     hintText: "Password Baru",
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isNewPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() {
-                          _isNewPasswordVisible = !_isNewPasswordVisible;
-                        });
+                        null;
                       },
                     ),
                   ),
@@ -117,20 +119,16 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
                   ),
                   MyTextFormField(
                     controller: _confirmPasswordController,
+                    obscureText: !_isConfirmPasswordVisible,
                     focusNode: _confirmPasswordFocusNode,
                     labelText: "Konfirmasi Password",
                     hintText: "Konfirmasi Password",
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _isConfirmPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() {
-                          _isConfirmPasswordVisible =
-                              !_isConfirmPasswordVisible;
-                        });
+                        null;
                       },
                     ),
                   ),
@@ -147,10 +145,58 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
             ),
             TextButton(
               child: const Text('Ganti Password'),
-              onPressed: () {
+              onPressed: () async {
                 // if (_formKey.currentState!.validate()) {
                 // unfocus all
+                String passwordLama = _oldPasswordController.text;
+                String passwordBaru = _newPasswordController.text;
+                String konfirmasiPassword = _confirmPasswordController.text;
                 FocusScope.of(context).unfocus();
+                // dev.i("ganti password");
+                if (passwordLama == "" ||
+                    passwordBaru == "" ||
+                    konfirmasiPassword == "") {
+                  info('Error', 'Semua field harus diisi',
+                      AnimatedSnackBarType.error);
+                  // focus to first field
+                  FocusScope.of(context).requestFocus(_oldPasswordFocusNode);
+
+                  return;
+                }
+
+                if (passwordBaru != konfirmasiPassword) {
+                  info(
+                      'Error',
+                      'Password baru dan konfirmasi password tidak sama',
+                      AnimatedSnackBarType.error);
+                  // focus to second field
+                  FocusScope.of(context).requestFocus(_newPasswordFocusNode);
+
+                  return;
+                }
+
+                BaseResponse? response = await ApiServices.gantiPassword(
+                  passwordLama,
+                  passwordBaru,
+                );
+
+                if (response == null) {
+                  info('Error', 'Terjadi Kesalahan Jaringan',
+                      AnimatedSnackBarType.error);
+                  return;
+                }
+
+                if (response.status == false) {
+                  info('Error', response.message, AnimatedSnackBarType.error);
+                  return;
+                }
+
+                info('Sukses Ganti Password', response.message,
+                    AnimatedSnackBarType.success);
+
+                pop();
+
+                // Navigator.of(context).pop();
 
                 // if
               },
@@ -159,6 +205,21 @@ class _ProfilKaryawanPageState extends State<ProfilKaryawanPage> {
         );
       },
     );
+  }
+
+  void info(String message, String title, AnimatedSnackBarType type) {
+    AnimatedSnackBar.rectangle(
+      title,
+      message,
+      type: type,
+      brightness: Brightness.dark,
+    ).show(
+      context,
+    );
+  }
+
+  void pop() {
+    Navigator.of(context).pop();
   }
 
   @override
@@ -321,7 +382,7 @@ class _DetailChild extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  color: ThemeInfo.myGrey2,
+                  color: ThemeInfo.primary,
                   size: 40,
                 ),
                 const SizedBox(

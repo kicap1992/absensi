@@ -45,6 +45,65 @@ class ApiServices {
     }
   }
 
+  static Future<BaseResponse?> cekUserPhoneID(
+      Map<String, dynamic> datanya) async {
+    try {
+      String endpoint = 'cek_datanya';
+      String deviceId = await storage.read("device_id");
+
+      Map<String, String> data = {
+        "nik": datanya['nik'],
+        "device_id": deviceId,
+      };
+      var response = await dio.post(endpoint, data: data);
+      var responseReturn = response.data;
+      // dev.i(responseReturn);
+      return BaseResponse.fromJson(responseReturn);
+    } on DioError catch (e) {
+      dev.e(e);
+
+      await storage.remove('userData');
+      return BaseResponse(
+        status: false,
+        message: e.response != null ? e.response!.data['message'] : e.message,
+      );
+    } catch (e) {
+      await storage.remove('userData');
+      dev.e(e);
+      return null;
+    }
+    // return null;
+  }
+
+  static Future<BaseResponse?> gantiPassword(
+      String passwordLama, String passwordBaru) async {
+    try {
+      String endpoint = 'ganti_password';
+      Map<String, dynamic> userData = await storage.read('userData');
+
+      Map<String, String> data = {
+        "nik": userData['nik'],
+        "password_lama": passwordLama,
+        "password_baru": passwordBaru,
+        "id_dinas": userData['id_dinas'],
+      };
+
+      var response = await dio.post(endpoint, data: data);
+      var responseReturn = response.data;
+
+      return BaseResponse.fromJson(responseReturn);
+    } on DioError catch (e) {
+      dev.e(e);
+      return BaseResponse(
+        status: false,
+        message: e.response != null ? e.response!.data['message'] : e.message,
+      );
+    } catch (e) {
+      dev.e(e);
+      return null;
+    }
+  }
+
   static Future<BaseResponse?> uploadLaporan(
       String? imgPath, String namaLaporan, String ketLaporan) async {
     try {

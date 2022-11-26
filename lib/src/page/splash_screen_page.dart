@@ -1,10 +1,12 @@
-import 'package:background_location/background_location.dart';
+// import 'package:background_location/background_location.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:platform_device_id/platform_device_id.dart';
 
 import '../config/theme.dart';
+import '../models/base_response.dart';
+import '../services/api_service.dart';
 import '../services/storage_service.dart';
 
 class SplashScreenPage extends StatefulWidget {
@@ -28,11 +30,25 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
     Future.delayed(const Duration(seconds: 4), () async {
       // await _storage.remove('userData');
       var checkUser = await _storage.read('userData');
-      // dev.i(checkUser);
+      dev.i(checkUser);
       if (checkUser == null) {
         goToLogin();
       } else {
-        goToHomepage();
+        // goToHomepage();
+        // change checkUSer to Map
+        Map<String, dynamic> userData = checkUser;
+
+        BaseResponse? response = await ApiServices.cekUserPhoneID(userData);
+
+        if (response!.status == true) {
+          // dev.i(response.data['data_user']);
+          await _storage.write('userData', response.data['data_user']);
+          // dev.i(response.data['data_jadwal']);
+
+          goToHomepage();
+        } else {
+          goToLogin();
+        }
       }
       // Navigator.pushReplacementNamed(context, 'login');
     });
@@ -116,7 +132,7 @@ class _SplashScreenPageState extends State<SplashScreenPage> {
               right: 15,
               child: Center(
                 child: Text(
-                  'Dinas Pariwisata Dan Kebudayaan\nKabupaten Mamuju Tengah\n\nAirlangga IT',
+                  'Dinas Pariwisata Kepemudaan Dan Olahraga\nKabupaten Mamuju Tengah\n\nAirlangga IT',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
