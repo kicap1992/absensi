@@ -228,7 +228,9 @@ void onStart(ServiceInstance service) async {
         if (seconds >= secondsJamMasuk && seconds <= secondsJamPulang) {
           dev.i("jalankan");
         } else {
-          dev.i("tidak jalankan");
+          // dev.i("tidak jalankan");
+          // stop service
+          service.stopSelf();
         }
       }
     }
